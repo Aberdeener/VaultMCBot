@@ -12,4 +12,8 @@ build/
 translation/
 remapping/
 settings.xml
+gradle/
+.DS_STORE
+lib/
+.gradle/
 src/main/java/me/aberdeener/vaultmcbot/config.json

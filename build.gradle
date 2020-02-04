@@ -1,0 +1,24 @@
+plugins {
+    id'application'
+    id'com.github.johnrengelman.shadow' version '4.0.4'
+}
+
+mainClassName = 'me.aberdeener.vaultmcbot.VaultMCBot'
+
+version '1.0'
+def jdaVersion = '3.8.3_464'
+
+sourceCompatibility = targetCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+    jcenter()
+}
+
+dependencies {
+    compile "net.dv8tion:JDA:4.1.1_101"
+    runtime 'mysql:mysql-connector-java:6.0.+'
+    compile 'org.json:json:20180813'
+}
+
+compileJava.options.encoding = 'UTF-8'
