@@ -40,31 +40,52 @@ public class TokenValidator extends ListenerAdapter {
             ResultSet select_rs = select.executeQuery();
 
             if (select_rs.next()) {
-                String nickname = select_rs.getString("username");
-                System.out.println(member + " entered valid token. Nickname set to: " + nickname);
-                member.modifyNickname(nickname).queue();
-                member.getGuild().getTextChannelById("618221832801353728").sendMessage(member.getAsMention() + " Welcome to the Guild! Your nickname has been set to: `" + nickname + "`").queue();
-                Role Players = member.getGuild().getRolesByName("Players", true).get(0);
-                member.getGuild().addRoleToMember(member, Players).queue();
-                msg.delete().queue();
 
                 try {
-                    PreparedStatement insert = VaultMCBot.connection
-                            .prepareStatement("UPDATE players SET discord_id = ? WHERE token = ?");
-                    insert.setString(1, member.getId());
-                    insert.setString(2, message);
-                    insert.executeUpdate();
+                    PreparedStatement duplicate = VaultMCBot.connection
+                            .prepareStatement("SELECT discord_id FROM players WHERE token = ?");
+                    duplicate.setString(1, message);
+                    ResultSet duplicate_rs = duplicate.executeQuery();
+
+                    if (duplicate_rs.next()) {
+
+                        String id = duplicate_rs.getString("discord_id");
+
+                        if (duplicate_rs.wasNull()) {
+                            System.out.println(duplicate_rs.getString("discord_id"));
+
+                            String nickname = select_rs.getString("username");
+                            System.out.println(member + " entered valid token. Nickname set to: " + nickname);
+                            member.modifyNickname(nickname).queue();
+                            member.getGuild().getTextChannelById("618221832801353728").sendMessage(member.getAsMention() + " Welcome to the Guild! Your nickname has been set to: `" + nickname + "`").queue();
+                            Role Players = member.getGuild().getRolesByName("Players", true).get(0);
+                            member.getGuild().addRoleToMember(member, Players).queue();
+                            msg.delete().queue();
+
+                            try {
+                                PreparedStatement insert = VaultMCBot.connection
+                                        .prepareStatement("UPDATE players SET discord_id = ? WHERE token = ?");
+                                insert.setString(1, member.getId());
+                                insert.setString(2, message);
+                                insert.executeUpdate();
+                            } catch (SQLException e) {
+                                e.printStackTrace();
+                            }
+                        } else {
+                            System.out.println(member + " entered a previously used token " + message);
+                            channel.sendMessage(member.getAsMention() + ", that token has already been used. If you need help, ask a staff member!").queue();
+                            msg.delete().queue();
+                        }
+                    }
                 } catch (SQLException e) {
                     e.printStackTrace();
                 }
             }
-
             else {
                 channel.sendMessage(member.getAsMention() + ", that token is invalid. If you need help, ask a staff member!").queue();
                 msg.delete().queue();
                 System.out.println(member + " entered invalid token.");
             }
-
         } catch (SQLException e) {
             e.printStackTrace();
         }
