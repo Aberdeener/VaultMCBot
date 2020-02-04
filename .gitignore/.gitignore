@@ -1,0 +1,15 @@
+.project
+.classpath
+.settings/
+bin/
+out/
+.idea/
+*.iml
+/target/
+target/
+bin/
+build/
+translation/
+remapping/
+settings.xml
+src/main/java/me/aberdeener/vaultmcbot/config.json
