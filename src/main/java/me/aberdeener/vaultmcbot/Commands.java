@@ -31,7 +31,7 @@ public class Commands extends ListenerAdapter {
                 if (args.length == 2 && !args[1].equals("1")) {
                     try {
                         System.out.println(member + " purged " + args[1] + " messages from the " + event.getTextChannel().getName() + " channel");
-                        event.getTextChannel().deleteMessages(event.getChannel().getHistory().retrievePast(Integer.parseInt(args[1])).complete()).queue();
+                        event.getTextChannel().deleteMessages(event.getChannel().getHistory().retrievePast(Integer.parseInt(args[1] + 1)).complete()).queue();
                         return;
                     } catch (NumberFormatException e) {
                         event.getTextChannel().sendMessage(member.getAsMention() + " you must supply a number of messages to purge. (Minumum 2)").queue();
@@ -53,11 +53,9 @@ public class Commands extends ListenerAdapter {
                         "\n`!updateme` Changed your Minecraft name or got a new rank on the server? Update it in this guild using this command.").queue();
                 return;
             }
-
             if (msg.equals("!updateme")) {
                 updateMember(member);
             }
-
             else {
                 System.out.println(member + " tried to talk in bot channel");
                 message.delete().queue();
@@ -79,87 +77,66 @@ public class Commands extends ListenerAdapter {
 
                 String nickname = rs.getString("username");
                 String rank = rs.getString("rank");
-
                 // if their username and rank are the same
                 if (nickname.equals(member.getEffectiveName()) && member.getRoles().toString().contains(rank)) {
                     System.out.println(member + " tried to update their username or rank but their minecraft name or rank is the same.");
                     member.getGuild().getTextChannelById("626594297835290624").sendMessage(member.getAsMention() + " your Minecraft name and rank have not been changed.").queue();
                     return;
                 }
-
                 // if username and rank are different
                 if (!member.getEffectiveName().toString().equals(nickname) && !member.getRoles().toString().contains(rank)) {
 
                     updateNickName(member, nickname);
 
-                    if (rank.equalsIgnoreCase("default")) {
-                        Role role = member.getGuild().getRolesByName("default", true).get(0);
-                        Role removeRole = null;
-                        updateRole(member, role, removeRole);
-                        return;
-                    }
-                    if (rank.equalsIgnoreCase("member")) {
-                        Role role = member.getGuild().getRolesByName("member", true).get(0);
-                        Role removeRole = member.getGuild().getRolesByName("default", true).get(0);
-                        updateRole(member, role, removeRole);
-                        return;
-                    }
-                    if (rank.equalsIgnoreCase("patreon")) {
-                        Role role = member.getGuild().getRolesByName("patreon", true).get(0);
-                        Role removeRole = member.getGuild().getRolesByName("member", true).get(0);
-                        updateRole(member, role, removeRole);
-                        return;
-                    }
-                    if (rank.equalsIgnoreCase("trusted")) {
-                        Role role = member.getGuild().getRolesByName("trusted", true).get(0);
-                        Role removeRole = member.getGuild().getRolesByName("patreon", true).get(0);
-                        updateRole(member, role, removeRole);
-                        return;
+                    Role role = null;
+                    Role removeRole = null;
+
+                    switch (rank) {
+                        case "admin":
+                                role = member.getGuild().getRolesByName("admin", true).get(0);
+                                removeRole = member.getGuild().getRolesByName("moderator", true).get(0);
+                                updateRole(member, role, removeRole);
+                            break;
+                        case "moderator":
+                                role = member.getGuild().getRolesByName("moderator", true).get(0);
+                                removeRole = member.getGuild().getRolesByName("trusted", true).get(0);
+                                updateRole(member, role, removeRole);
+                            break;
+                        default:
+                            break;
                     }
                     return;
                 }
-
                 //if username is same but rank is different
                 if (member.getEffectiveName().toString().equals(nickname) && !member.getRoles().toString().contains(rank)) {
 
-                    if (rank.equalsIgnoreCase("default")) {
-                        Role role = member.getGuild().getRolesByName("default", true).get(0);
-                        Role removeRole = null;
-                        updateRole(member, role, removeRole);
-                        return;
-                    }
-                    if (rank.equalsIgnoreCase("member")) {
-                        Role role = member.getGuild().getRolesByName("member", true).get(0);
-                        Role removeRole = member.getGuild().getRolesByName("default", true).get(0);
-                        updateRole(member, role, removeRole);
-                        return;
-                    }
-                    if (rank.equalsIgnoreCase("patreon")) {
-                        Role role = member.getGuild().getRolesByName("patreon", true).get(0);
-                        Role removeRole = member.getGuild().getRolesByName("member", true).get(0);
-                        updateRole(member, role, removeRole);
-                        return;
-                    }
-                    if (rank.equalsIgnoreCase("trusted")) {
-                        Role role = member.getGuild().getRolesByName("trusted", true).get(0);
-                        Role removeRole = member.getGuild().getRolesByName("patreon", true).get(0);
-                        updateRole(member, role, removeRole);
-                        return;
+                    Role role = null;
+                    Role removeRole = null;
+
+                    switch (rank) {
+                        case "admin":
+                            role = member.getGuild().getRolesByName("admin", true).get(0);
+                            updateRole(member, role, removeRole);
+                            break;
+                        case "moderator":
+                            role = member.getGuild().getRolesByName("moderator", true).get(0);
+                            updateRole(member, role, removeRole);
+                            break;
+                        default:
+                            break;
                     }
                     return;
                 }
-
                 // if username is different but rank is same.
                 if (!member.getEffectiveName().toString().equals(nickname) && member.getRoles().toString().contains(rank)) {
                     updateNickName(member, nickname);
-                    return;
                 }
-
                 else {
                     member.getGuild().getTextChannelById("626594297835290624").sendMessage(member.getAsMention() + " an unknown error occured, please contact an Administrator.").queue();
-                    return;
                 }
+                return;
             }
+            System.out.println(member + " does not have a discord id assosiated in our db " + member.getId());
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -175,11 +152,6 @@ public class Commands extends ListenerAdapter {
     private static void updateRole(Member member, Role role, Role removeRole) {
         System.out.println(member + "'s rank set to " + role.toString());
         member.getGuild().getTextChannelById("626594297835290624").sendMessage(member.getAsMention() + " your rank has been updated to `" + role.getName() + "`").queue();
-        if (removeRole == null) {
-            member.getGuild().addRoleToMember(member, role).queue();
-            return;
-        }
-        member.getGuild().removeRoleFromMember(member, removeRole).queue();
         member.getGuild().addRoleToMember(member, role).queue();
         return;
     }

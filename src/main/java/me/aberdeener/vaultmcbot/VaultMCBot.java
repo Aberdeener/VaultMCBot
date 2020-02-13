@@ -14,11 +14,13 @@ import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class VaultMCBot extends ListenerAdapter {
 
     public static String getConfig(String request) throws FileNotFoundException {
-        String resourceName = "/Users/aberdeener/Desktop/VaultMCBot/src/main/java/me/aberdeener/vaultmcbot/config.json";
+        String resourceName = "/srv/vaultmcbot/config.json";
         InputStream is = new FileInputStream(resourceName);
         if (is == null) {
             throw new NullPointerException("Cannot find resource file " + resourceName);
@@ -41,6 +43,26 @@ public class VaultMCBot extends ListenerAdapter {
                 .build();
         jda.awaitReady();
         connect();
+        long minute = 1200L;
+        Timer timer = new Timer();
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                try {
+                    if (VaultMCBot.connection.isValid(10)) {
+                        return;
+                    }
+                    else {
+                        VaultMCBot.connection.close();
+                        System.out.println("database connection invalid, reconnecting");
+                        VaultMCBot.connect();
+                    }
+                } catch (SQLException e) {
+                    System.out.println("error checking if sql connection is valid :(");
+                    e.printStackTrace();
+                }
+            }
+        }, minute, minute * 2);
     }
 
     // mysql info
@@ -49,7 +71,7 @@ public class VaultMCBot extends ListenerAdapter {
         return connection;
     }
 
-    private static void connect() {
+    public static void connect() {
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
             connection = DriverManager.getConnection(getConfig("host"), getConfig("username"), getConfig("password"));
